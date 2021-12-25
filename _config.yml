@@ -80,7 +80,7 @@ theme: next
 deploy:
   type: git
   repo: git@github.com:chenzeyuczy/chenzeyuczy.github.io.git
-  branch: master
+  branch: gh-pages
 
 # MathJax Support
 math:
