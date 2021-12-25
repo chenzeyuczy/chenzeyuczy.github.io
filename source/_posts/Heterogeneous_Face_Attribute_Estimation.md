@@ -2,6 +2,7 @@
 title: 论文阅读《Heterogeneous Face Attribute Estimation:A Deep Multi-Task Learning Approach》
 date: 2018/10/23 17:10:00
 tags: face attributes
+mathjax: true
 ---
 
 ### 简介
@@ -26,23 +27,31 @@ tags: face attributes
 ##### 多任务学习
 传统的多任务学习使用如下方式：
 
-$${argmin}_{W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} L\(y^i_j, F\(X_i,W^j\)\) + \gamma\Phi\(W^j\) \)$$
+$$
+{argmin}_{W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} L(y^i_j, F(X_i,W^j)) + \gamma\Phi(W^j) )
+$$
 
 作者在此基础上引入了对共享权值和独立权值的学习率参数，以区别对待。
 
-$${argmin}_{W_c, W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} 
-L\(y^i_j, F\(X_i,W^j \circ W_c\)\) + \gamma_1\Phi\(W_c\) \) + \gamma_2\Phi\(W^j\) \)$$
+$$
+{argmin}_{W_c, W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} 
+L(y^i_j, F(X_i,W^j \circ W_c)) + \gamma_1\Phi(W_c) ) + \gamma_2\Phi(W^j) )
+$$
 
 针对分组多任务学习，损失函数相应地调整为：
 
 $${argmin}_{W_c, W_{j=1}^M} \sum_{g=1}^G \sum_{j=1}^{M^g} \sum_{i=1}^{N} 
-\lambda^g L^g\(y^i_j, F\(X_i,W^g \circ W_c\)\) + \gamma_1\Phi\(W_c\) \) + \gamma_2\Phi\(W^g\) \)$$
+\lambda^g L^g(y^i_j, F(X_i,W^g \circ W_c)) + \gamma_1\Phi(W_c) ) + \gamma_2\Phi(W^g) )$$
 
 ##### 离散特征 VS 连续特征
 - 对于连续属性特征，模型使用L2距离进行回归训练；
-$$L^{gO}=\sum_{j=1}^{M^o}\sum_{i=1}^{N}{\left|\left|{y_i^j-\hat{y}^j_i}\right|\right|}^2_2$$
+$$
+L^{gO}=\sum_{j=1}^{M^o}\sum_{i=1}^{N}{\left|\left|{y_i^j-\hat{y}^j_i}\right|\right|}^2_2
+$$
 - 对于离散属性特征，模型采用交叉熵进行模型训练。
-$$L^{gN} = -\sum_{j=1}^{M^N} \sum_{i=1}^N \sum_{k=1}^{C^j} 1(yi^j_, \hat{y}^{j,k}_i) log p(\hat{y}^{j,k}_i)$$
+$$
+L^{gN} = -\sum_{j=1}^{M^N} \sum_{i=1}^N \sum_{k=1}^{C^j} 1(yi^j_, \hat{y}^{j,k}_i) log p(\hat{y}^{j,k}_i)
+$$
 
 #### 网络模型
 本文的网络结构在AlexNet的基础上做了一些修改，包含一个5层的卷积和2层全连接，每一层卷积都跟着一个BN层和一个最大池化层。经过这7层的网络学习后得到共享的属性特征。接着对于不同组别的属性分类任务，模型分别使用一个独立的网络结构进行特征学习。
