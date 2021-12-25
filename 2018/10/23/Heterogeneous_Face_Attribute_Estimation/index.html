@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"chenzeyuczy.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="简介本文介绍了一个用于人脸分类的文章，该文章发表在2018年的《TPAMI》期刊上。文章主要做了如下几个工作：  避开人脸姿态、对齐的工作，着重对多种属性的联合预估进行分析判断。 充分使用人脸属性的相关性与异质性进行训练。 端到端的学习训练模式。 使用大量的场景进行训练。   主要思路本文经过分析，将人脸的属性按照数据类型和语义信息这两种方式进行了划分，分别是全局与局部属性，连续与离散属性。经过排">
+<meta property="og:type" content="article">
+<meta property="og:title" content="论文阅读《Heterogeneous Face Attribute Estimation:A Deep Multi-Task Learning Approach》">
+<meta property="og:url" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/index.html">
+<meta property="og:site_name" content="空空如也">
+<meta property="og:description" content="简介本文介绍了一个用于人脸分类的文章，该文章发表在2018年的《TPAMI》期刊上。文章主要做了如下几个工作：  避开人脸姿态、对齐的工作，着重对多种属性的联合预估进行分析判断。 充分使用人脸属性的相关性与异质性进行训练。 端到端的学习训练模式。 使用大量的场景进行训练。   主要思路本文经过分析，将人脸的属性按照数据类型和语义信息这两种方式进行了划分，分别是全局与局部属性，连续与离散属性。经过排">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_heterogeneity.png">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/framework.png">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_accuracy_morph_lfw.jpg">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_accuracy_celeba_lfwa.jpg">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/accuracy_multi_task.jpg">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/cross_dataset_accuracy.jpg">
+<meta property="og:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/computational_cost.jpg">
+<meta property="article:published_time" content="2018-10-23T09:10:00.000Z">
+<meta property="article:modified_time" content="2021-12-25T04:16:10.726Z">
+<meta property="article:author" content="chenzy">
+<meta property="article:tag" content="face attributes">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_heterogeneity.png">
+
+<link rel="canonical" href="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>论文阅读《Heterogeneous Face Attribute Estimation:A Deep Multi-Task Learning Approach》 | 空空如也</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">空空如也</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://chenzeyuczy.github.io/2018/10/23/Heterogeneous_Face_Attribute_Estimation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="chenzy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="空空如也">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          论文阅读《Heterogeneous Face Attribute Estimation:A Deep Multi-Task Learning Approach》
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-10-23 17:10:00" itemprop="dateCreated datePublished" datetime="2018-10-23T17:10:00+08:00">2018-10-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-12-25 12:16:10" itemprop="dateModified" datetime="2021-12-25T12:16:10+08:00">2021-12-25</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>本文介绍了一个用于人脸分类的文章，该文章发表在2018年的《TPAMI》期刊上。<br>文章主要做了如下几个工作：</p>
+<ul>
+<li>避开人脸姿态、对齐的工作，着重对多种属性的联合预估进行分析判断。</li>
+<li>充分使用人脸属性的相关性与异质性进行训练。</li>
+<li>端到端的学习训练模式。</li>
+<li>使用大量的场景进行训练。<img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_heterogeneity.png" class="" title="人脸属性的相关性与异质性">
+</li>
+</ul>
+<h3 id="主要思路"><a href="#主要思路" class="headerlink" title="主要思路"></a>主要思路</h3><p>本文经过分析，将人脸的属性按照数据类型和语义信息这两种方式进行了划分，分别是全局与局部属性，连续与离散属性。经过排列组合，可以得到四类属性分组。<br>对于每一类属性，网络共享前置的基础网络特征，在基础网络后针对不同的分组，分别设置了相对独立的不同的神经网络结构。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">ordinal + local</td>
+<td style="text-align:center">nominal + local</td>
+</tr>
+<tr>
+<td style="text-align:center">ordinal + global</td>
+<td style="text-align:center">nominal + global</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h4><h5 id="多任务学习"><a href="#多任务学习" class="headerlink" title="多任务学习"></a>多任务学习</h5><p>传统的多任务学习使用如下方式：</p>
+<script type="math/tex; mode=display">
+{argmin}_{W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} L(y^i_j, F(X_i,W^j)) + \gamma\Phi(W^j) )</script><p>作者在此基础上引入了对共享权值和独立权值的学习率参数，以区别对待。</p>
+<script type="math/tex; mode=display">
+{argmin}_{W_c, W_{j=1}^M} \sum_{j=1}^{M} \sum_{i=1}^{N} 
+L(y^i_j, F(X_i,W^j \circ W_c)) + \gamma_1\Phi(W_c) ) + \gamma_2\Phi(W^j) )</script><p>针对分组多任务学习，损失函数相应地调整为：</p>
+<script type="math/tex; mode=display">{argmin}_{W_c, W_{j=1}^M} \sum_{g=1}^G \sum_{j=1}^{M^g} \sum_{i=1}^{N} 
+\lambda^g L^g(y^i_j, F(X_i,W^g \circ W_c)) + \gamma_1\Phi(W_c) ) + \gamma_2\Phi(W^g) )</script><h5 id="离散特征-VS-连续特征"><a href="#离散特征-VS-连续特征" class="headerlink" title="离散特征 VS 连续特征"></a>离散特征 VS 连续特征</h5><ul>
+<li>对于连续属性特征，模型使用L2距离进行回归训练；<script type="math/tex; mode=display">
+L^{gO}=\sum_{j=1}^{M^o}\sum_{i=1}^{N}{\left|\left|{y_i^j-\hat{y}^j_i}\right|\right|}^2_2</script></li>
+<li>对于离散属性特征，模型采用交叉熵进行模型训练。<script type="math/tex; mode=display">
+L^{gN} = -\sum_{j=1}^{M^N} \sum_{i=1}^N \sum_{k=1}^{C^j} 1(yi^j_, \hat{y}^{j,k}_i) log p(\hat{y}^{j,k}_i)</script></li>
+</ul>
+<h4 id="网络模型"><a href="#网络模型" class="headerlink" title="网络模型"></a>网络模型</h4><p>本文的网络结构在AlexNet的基础上做了一些修改，包含一个5层的卷积和2层全连接，每一层卷积都跟着一个BN层和一个最大池化层。经过这7层的网络学习后得到共享的属性特征。接着对于不同组别的属性分类任务，模型分别使用一个独立的网络结构进行特征学习。<br><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/framework.png" class="" title="论文使用的网络结构"></p>
+<h3 id="实验部分"><a href="#实验部分" class="headerlink" title="实验部分"></a>实验部分</h3><p>文章在MORPH II、CelebA、LFWA、ChaLearn LAP和FotW等数据集上进行了验证。</p>
+<h4 id="数据预处理"><a href="#数据预处理" class="headerlink" title="数据预处理"></a>数据预处理</h4><p>实验中使用SeetaFace Engine对数据集中的图像进行人脸检测和特征点定位，随后基于5个特征点将人脸归一化到$256 \ast 256 \ast 3$的尺寸。</p>
+<p>对于属性分组，本文将所有属性按照数据类型（离散、连续）与语义信息（全局、局部）分成了四类。</p>
+<h4 id="连续与离散属性预测"><a href="#连续与离散属性预测" class="headerlink" title="连续与离散属性预测"></a>连续与离散属性预测</h4><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_accuracy_morph_lfw.jpg" class="" title="MORPH和LFW数据集上的实验效果">
+<h4 id="二元属性预测"><a href="#二元属性预测" class="headerlink" title="二元属性预测"></a>二元属性预测</h4><p>与主流算法在CelebA和LFWA数据集上的比较都达到了比较理想的效果。<br><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/attribute_accuracy_celeba_lfwa.jpg" class="" title="CelebA和LFWA数据集上的实验效果"></p>
+<h4 id="单任务与多任务对比"><a href="#单任务与多任务对比" class="headerlink" title="单任务与多任务对比"></a>单任务与多任务对比</h4><p>实验利用CelebA中常见的8中属性进行多任务训练与单任务训练的对比。实验结果表明在大部分场景下，使用多任务能够显著提升模型性能。<br><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/accuracy_multi_task.jpg" class="" title="单任务与多任务实验的效果对比"></p>
+<h4 id="跨数据集测试"><a href="#跨数据集测试" class="headerlink" title="跨数据集测试"></a>跨数据集测试</h4><p>论文进行了跨数据集的实验以验证模型的泛化能力。<br><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/cross_dataset_accuracy.jpg" class="" title="跨数据集测试的实验效果"></p>
+<h4 id="运行效率分析"><a href="#运行效率分析" class="headerlink" title="运行效率分析"></a>运行效率分析</h4><p>算法的运行效率如图所示，相比主流方法有较为明显的优势。<br><img src="/2018/10/23/Heterogeneous_Face_Attribute_Estimation/computational_cost.jpg" class="" title="算法运行效率"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/face-attributes/" rel="tag"># face attributes</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/07/17/%E5%BC%80%E7%AF%87%E8%AE%B0/" rel="prev" title="开篇记">
+      <i class="fa fa-chevron-left"></i> 开篇记
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">主要思路</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="nav-number">2.1.</span> <span class="nav-text">损失函数</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A4%9A%E4%BB%BB%E5%8A%A1%E5%AD%A6%E4%B9%A0"><span class="nav-number">2.1.1.</span> <span class="nav-text">多任务学习</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%A6%BB%E6%95%A3%E7%89%B9%E5%BE%81-VS-%E8%BF%9E%E7%BB%AD%E7%89%B9%E5%BE%81"><span class="nav-number">2.1.2.</span> <span class="nav-text">离散特征 VS 连续特征</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">网络模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E9%83%A8%E5%88%86"><span class="nav-number">3.</span> <span class="nav-text">实验部分</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-number">3.1.</span> <span class="nav-text">数据预处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9E%E7%BB%AD%E4%B8%8E%E7%A6%BB%E6%95%A3%E5%B1%9E%E6%80%A7%E9%A2%84%E6%B5%8B"><span class="nav-number">3.2.</span> <span class="nav-text">连续与离散属性预测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E5%85%83%E5%B1%9E%E6%80%A7%E9%A2%84%E6%B5%8B"><span class="nav-number">3.3.</span> <span class="nav-text">二元属性预测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%95%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A4%9A%E4%BB%BB%E5%8A%A1%E5%AF%B9%E6%AF%94"><span class="nav-number">3.4.</span> <span class="nav-text">单任务与多任务对比</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B7%A8%E6%95%B0%E6%8D%AE%E9%9B%86%E6%B5%8B%E8%AF%95"><span class="nav-number">3.5.</span> <span class="nav-text">跨数据集测试</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%95%88%E7%8E%87%E5%88%86%E6%9E%90"><span class="nav-number">3.6.</span> <span class="nav-text">运行效率分析</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">chenzy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">chenzy</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
