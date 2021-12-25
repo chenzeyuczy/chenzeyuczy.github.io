@@ -84,3 +84,6 @@ $$
 #### 运行效率分析
 算法的运行效率如图所示，相比主流方法有较为明显的优势。
 {% asset_img computational_cost.jpg 算法运行效率 %}
+
+### 文献引用
+- Han H, Jain A K, Wang F, et al. Heterogeneous face attribute estimation: A deep multi-task learning approach[J]. IEEE transactions on pattern analysis and machine intelligence, 2017, 40(11): 2597-2609.
